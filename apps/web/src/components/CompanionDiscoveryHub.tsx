@@ -8,10 +8,7 @@ import {
   Settings,
 } from "lucide-react";
 import type { CompanionAction, CompanionDiscoveryItem } from "@edgeever/shared";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { api, ApiRequestError } from "@/lib/api";
@@ -132,9 +129,9 @@ export default function CompanionDiscoveryHub({ scope, onOpenNote, onNotesChange
                   {t("companion.discovery.title")}
                 </DialogTitle>
                 {items.length > 0 ? (
-                  <Badge variant="outline" className="border-emerald-600/20 bg-emerald-50 px-2 font-medium text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-950/40 dark:text-emerald-300">
+                  <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-500/30">
                     {items.length}
-                  </Badge>
+                  </span>
                 ) : null}
               </div>
             </div>
@@ -142,14 +139,14 @@ export default function CompanionDiscoveryHub({ scope, onOpenNote, onNotesChange
         </DialogHeader>
         <div className="min-h-0 space-y-3.5 overflow-y-auto px-5 py-4">
           {error ? (
-            <Alert variant="destructive" className="p-2.5">
-              <AlertDescription className="text-xs">{error}</AlertDescription>
-            </Alert>
+            <div role="alert" className="rounded-lg border border-red-200 bg-red-50/50 p-2.5 text-xs text-red-600 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400">
+              {error}
+            </div>
           ) : null}
           {feed.isError ? (
-            <Alert variant="destructive" className="p-2.5">
-              <AlertDescription className="text-xs">{t("companion.discovery.loadFailed")}</AlertDescription>
-            </Alert>
+            <div role="alert" className="rounded-lg border border-red-200 bg-red-50/50 p-2.5 text-xs text-red-600 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400">
+              {t("companion.discovery.loadFailed")}
+            </div>
           ) : null}
           {!feed.isPending && !feed.isError && !items.length ? (
             <div className="flex flex-col items-center justify-center py-10 text-center">
@@ -206,59 +203,58 @@ function DiscoveryCard({ item, busy, open, onApply, onDismiss, onOpenNote, onSee
     : null;
 
   return (
-    <article ref={ref}>
-      <Card className="group relative flex flex-col gap-3 rounded-xl border border-slate-200/90 bg-white p-4 shadow-xs transition-all hover:border-slate-300 hover:shadow-sm dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-slate-700">
-      <CardHeader className="flex-row items-start justify-between gap-3 p-0">
+    <article
+      ref={ref}
+      className="group relative flex flex-col gap-3 rounded-xl border border-slate-200/90 bg-white p-4 shadow-xs transition-all hover:border-slate-300 hover:shadow-sm dark:border-slate-800 dark:bg-slate-900/60 dark:hover:border-slate-700"
+    >
+      <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <CardTitle className="line-clamp-1 break-words text-sm leading-snug text-slate-900 dark:text-slate-100">
+          <h3 className="line-clamp-1 break-words text-sm font-semibold leading-snug text-slate-900 dark:text-slate-100">
             {item.title}
-          </CardTitle>
+          </h3>
         </div>
         {formattedDate ? (
           <time className="shrink-0 pt-0.5 font-mono text-[11px] text-slate-400 dark:text-slate-500">
             {formattedDate}
           </time>
         ) : null}
-      </CardHeader>
-      <CardContent className="space-y-3 p-0">
-        {!item.action ? (
-          <p className="line-clamp-4 whitespace-pre-wrap break-words text-xs leading-relaxed text-slate-600 sm:text-sm dark:text-slate-300">
-            {item.body}
-          </p>
-        ) : null}
-        {item.kind === "append" ? (
-          <p className="rounded-lg border border-emerald-100 bg-emerald-50/50 p-2.5 text-xs leading-relaxed text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-400">
-            {t("companion.discovery.appendHelp")}
-          </p>
-        ) : null}
-        {item.action ? (
-          <CompanionActionCard
-            action={item.action}
-            busy={busy}
-            onApply={onApply}
-            onDismiss={onDismiss}
-            onOpenNote={onOpenNote}
-          />
-        ) : item.sources.length > 0 ? (
-          <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-            {item.sources.map(source => (
-              <Button
-                key={source.id}
-                size="sm"
-                variant="outline"
-                onClick={() => onOpenNote(source.id, source.notebookId)}
-                className="group/btn h-7 max-w-full gap-1.5 bg-slate-50/70 px-2.5 text-xs text-slate-700 hover:border-emerald-400 hover:bg-emerald-50/50 hover:text-emerald-700 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300 dark:hover:border-emerald-600 dark:hover:bg-emerald-950/30 dark:hover:text-emerald-300"
-              >
-                <FileText className="h-3 w-3 shrink-0 text-slate-400 group-hover/btn:text-emerald-600 dark:group-hover/btn:text-emerald-400" />
-                <span className="max-w-[260px] truncate">{source.title || t("common.untitledMemo")}</span>
-                <ArrowUpRight className="h-3 w-3 shrink-0 opacity-40 group-hover/btn:opacity-100" />
-              </Button>
-            ))}
-          </div>
-        ) : null}
-      </CardContent>
+      </div>
       {!item.action ? (
-        <CardFooter className="justify-end border-t border-slate-100 p-0 pt-2.5 dark:border-slate-800/80">
+        <p className="line-clamp-4 whitespace-pre-wrap break-words text-xs leading-relaxed text-slate-600 sm:text-sm dark:text-slate-300">
+          {item.body}
+        </p>
+      ) : null}
+      {item.kind === "append" ? (
+        <p className="rounded-lg border border-emerald-100 bg-emerald-50/50 p-2.5 text-xs leading-relaxed text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-400">
+          {t("companion.discovery.appendHelp")}
+        </p>
+      ) : null}
+      {item.action ? (
+        <CompanionActionCard
+          action={item.action}
+          busy={busy}
+          onApply={onApply}
+          onDismiss={onDismiss}
+          onOpenNote={onOpenNote}
+        />
+      ) : item.sources.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+          {item.sources.map(source => (
+            <button
+              key={source.id}
+              type="button"
+              onClick={() => onOpenNote(source.id, source.notebookId)}
+              className="group/btn inline-flex max-w-full items-center gap-1.5 rounded-lg border border-slate-200/80 bg-slate-50/70 px-2.5 py-1 text-xs font-medium text-slate-700 shadow-2xs transition-colors hover:border-emerald-400 hover:bg-emerald-50/50 hover:text-emerald-700 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300 dark:hover:border-emerald-600 dark:hover:bg-emerald-950/30 dark:hover:text-emerald-300"
+            >
+              <FileText className="h-3 w-3 shrink-0 text-slate-400 group-hover/btn:text-emerald-600 dark:group-hover/btn:text-emerald-400" />
+              <span className="max-w-[260px] truncate">{source.title || t("common.untitledMemo")}</span>
+              <ArrowUpRight className="h-3 w-3 shrink-0 opacity-40 group-hover/btn:opacity-100" />
+            </button>
+          ))}
+        </div>
+      ) : null}
+      {!item.action ? (
+        <div className="flex items-center justify-end border-t border-slate-100 pt-2.5 dark:border-slate-800/80">
           <Button
             size="sm"
             variant="ghost"
@@ -268,9 +264,8 @@ function DiscoveryCard({ item, busy, open, onApply, onDismiss, onOpenNote, onSee
           >
             {t("companion.discovery.dismiss")}
           </Button>
-        </CardFooter>
+        </div>
       ) : null}
-      </Card>
     </article>
   );
 }

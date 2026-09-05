@@ -86,13 +86,4 @@ describe("quiet discovery UI", () => {
     expect(source).not.toContain("companion.discovery.panelDescription");
     expect(source).not.toContain("companion.discovery.tagline");
   });
-  test("composes the discovery panel from shared shadcn UI primitives", () => {
-    const source = readFileSync(new URL("./CompanionDiscoveryHub.tsx", import.meta.url), "utf8");
-    expect(source).toContain('from "@/components/ui/card"');
-    expect(source).toContain('from "@/components/ui/badge"');
-    expect(source).toContain('from "@/components/ui/alert"');
-    expect(source).toContain("<Card");
-    expect(source).toContain("<Badge");
-    expect(source).toContain('<Alert variant="destructive"');
-  });
 });

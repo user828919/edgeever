@@ -1230,10 +1230,10 @@ export const createEdgeEverClient = (options: EdgeEverClientOptions = {}) => {
     downloadGithubPluginAsset: (
       owner: string,
       repository: string,
-      releaseTag: string,
+      assetId: number,
       assetName: "manifest.json" | "main.js" | "styles.css",
     ) => requestArrayBuffer(
-      `/api/v1/plugins/github/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/releases/${encodeURIComponent(releaseTag)}/assets/${encodeURIComponent(assetName)}`,
+      `/api/v1/plugins/github/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/assets/${assetId}/${encodeURIComponent(assetName)}`,
     ),
 
     uploadMemoResource: (memoId: string, file: Blob | FormData) => {
