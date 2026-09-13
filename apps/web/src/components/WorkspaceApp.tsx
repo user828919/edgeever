@@ -985,13 +985,11 @@ export const WorkspaceApp = ({
     editorContentAlignment,
     imageCompressionEnabled,
     memoListWidth,
-    notebookSidebarCollapsed,
     resetMemoListWidth,
     setDesktopFocusMode,
     setEditorContentAlignment,
     setImageCompressionEnabled,
     setMemoListWidth,
-    setNotebookSidebarCollapsed,
     setShortcutSettings,
     shortcutSettings,
   } = useWorkspacePreferences();
@@ -2094,7 +2092,6 @@ export const WorkspaceApp = ({
     : null;
   const selectedMemo = memoQuery.data?.memo ?? cachedSelectedMemo;
   const selectedDiagram = parseDiagramDocument(selectedMemo?.contentMarkdown);
-  const desktopNotebookSidebarCollapsed = Boolean(isDesktop && notebookSidebarCollapsed);
   const desktopFocusModeActive = Boolean(
     isDesktop && desktopFocusMode && rightView === "editor" && selectedMemo && !memoSelectionModeActive
   );
@@ -3285,15 +3282,13 @@ export const WorkspaceApp = ({
               ? "edgeever-workspace-grid--focus"
               : rightView === "editor"
                 ? "edgeever-workspace-grid--editor"
-                : "edgeever-workspace-grid--single-right",
-            !desktopFocusModeActive && desktopNotebookSidebarCollapsed && "edgeever-workspace-grid--sidebar-collapsed"
+                : "edgeever-workspace-grid--single-right"
           )}
           style={{ "--memo-list-width": `${memoListWidth}px` } as CSSProperties}
         >
           <aside
-            id="edgeever-notebook-sidebar"
             className={cn(
-              "edgeever-workspace-sidebar min-h-0 overflow-hidden border-r",
+              "edgeever-workspace-sidebar min-h-0 border-r",
               desktopFocusModeActive
                 ? "hidden"
                 : visibleActivePane === "notebooks"
@@ -3357,8 +3352,6 @@ export const WorkspaceApp = ({
                   demoMode={demoMode}
                   onResetDemo={() => setDemoResetConfirmationOpen(true)}
                   isResettingDemo={resetDemoMutation.isPending}
-                  collapsed={desktopNotebookSidebarCollapsed}
-                  onToggleCollapsed={() => setNotebookSidebarCollapsed(!notebookSidebarCollapsed)}
                 />
               </Suspense>
             )}

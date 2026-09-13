@@ -98,16 +98,6 @@ export const isMarkdownLightTheme = (theme: MarkdownThemeName): boolean =>
 
 export const EDITOR_THEME_NAMES = [
   "default",
-  "letter",
-  "guide",
-  "blueprint",
-  "journal",
-  "stance",
-  "stub",
-  "brief",
-  "outline",
-  "zen",
-  "grove",
   "minimal-emerald",
   "outline-emerald",
   "wechat-green",
@@ -116,9 +106,6 @@ export const EDITOR_THEME_NAMES = [
   "custom",
 ] as const;
 export type EditorThemeName = string;
-
-export const isNamedEditorTheme = (theme: string) =>
-  (EDITOR_THEME_NAMES as readonly string[]).includes(theme) && theme !== "custom";
 
 interface AppearanceThemeContextValue {
   preference: ThemePreference;

@@ -44,12 +44,9 @@ export type { PdfDisplayMode } from "./pdf-attachment";
 export {
   FileAttachment,
   FILE_ATTACHMENT_NODE_TYPE,
-  FILE_DISPLAY_MODES,
   isFileAttachmentLink,
-  resolveFileDisplayMode,
   upgradeStandaloneFileLinks,
 } from "./file-attachment";
-export type { FileDisplayMode } from "./file-attachment";
 
 export type TiptapTextNode = {
   type: "text";

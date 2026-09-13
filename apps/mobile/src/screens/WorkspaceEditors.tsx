@@ -802,7 +802,6 @@ export const CreateMemoModal = ({
   );
 };
 
-/** Full-tree editor for paths that do not already have a mounted viewer WebView. Existing notes edit in place on the detail viewer. */
 export const RichEditorModal = ({
   baseUrl,
   initialDraft,

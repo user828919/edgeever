@@ -2,6 +2,7 @@ import type { PluginPanelAction, PluginPanelActionVariant, PluginPanelChrome, Pl
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 
 const actionVariant = (variant?: PluginPanelActionVariant): "outline" | "solid" | "ghost" => {
@@ -41,21 +42,18 @@ const ToolbarItem = ({ item, onAction, onChange }: {
   }
   if (item.type === "tabs") {
     return (
-      <div className="flex flex-wrap gap-1" role="tablist">
+      <ToggleGroup
+        type="single"
+        value={item.value}
+        className="flex-wrap gap-1"
+        onValueChange={(value) => { if (value) onChange?.(item.key, value); }}
+      >
         {item.options.map((option) => (
-          <Button
-            key={option.value}
-            type="button"
-            size="sm"
-            variant={item.value === option.value ? "solid" : "outline"}
-            className="h-8 px-2.5 text-xs"
-            aria-selected={item.value === option.value}
-            onClick={() => onChange?.(item.key, option.value)}
-          >
+          <ToggleGroupItem key={option.value} value={option.value} variant="outline" size="sm">
             {option.label}
-          </Button>
+          </ToggleGroupItem>
         ))}
-      </div>
+      </ToggleGroup>
     );
   }
   if (item.type === "select") {

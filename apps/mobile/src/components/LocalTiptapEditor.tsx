@@ -142,21 +142,37 @@ type LocalTiptapEditorSharedProps = {
   ref: Ref<LocalTiptapEditorRef>;
   locale: "zh-CN" | "en-US";
   theme: "light" | "dark";
-  /** Live-switchable. The same DomWebView stays mounted across viewer → editor. */
-  mode?: "editor" | "viewer";
+};
+
+/** Editable note body with toolbar (create / rich edit). */
+type LocalTiptapEditorModeProps = LocalTiptapEditorSharedProps & {
+  mode?: "editor";
   aiPromptsJson?: string;
   autoFocus?: boolean;
-  onChange?: (content: EditorDoc) => Promise<void>;
-  onPickImage?: () => Promise<void>;
+  onChange: (content: EditorDoc) => Promise<void>;
+  onPickImage: () => Promise<void>;
   onAiRequest?: (requestJson: string) => Promise<void>;
   onAiCancel?: (requestId: string) => Promise<void>;
+  onReady: (startupMs: number) => Promise<void>;
+};
+
+/**
+ * Read-only note body that reuses the same TipTap schema / image loading as the
+ * editor. Used by the native memo detail chrome (scheme C).
+ */
+type LocalTiptapViewerModeProps = LocalTiptapEditorSharedProps & {
+  mode: "viewer";
+  /** Parsed visual diagram IR for the native X6 read-only viewer. */
   visualDiagramJson?: string;
+  /** Hides code affordances when a damaged diagram falls back to Mermaid. */
   visualDiagramNote?: boolean;
+  /** JSON: `{ alt: string; source: string }` for fullscreen image preview. */
   onImagePreview?: (payloadJson: string) => Promise<void>;
+  /** Enter note editing after a deliberate double tap on ordinary body content. */
   onDoublePress?: () => Promise<void>;
 };
 
-type LocalTiptapEditorProps = LocalTiptapEditorSharedProps;
+type LocalTiptapEditorProps = LocalTiptapEditorModeProps | LocalTiptapViewerModeProps;
 
 type MermaidRendererProps = {
   diagramsJson: string;
@@ -633,8 +649,6 @@ const scrollEditorPositionIntoView = (
 
 function LocalTiptapEditorImpl(props: LocalTiptapEditorProps) {
   const isViewer = props.mode === "viewer";
-  const isViewerRef = useRef(isViewer);
-  isViewerRef.current = isViewer;
   const visualDiagram = useMemo(() => {
     if (props.mode !== "viewer" || !props.visualDiagramJson) return null;
     try {
@@ -737,19 +751,22 @@ function LocalTiptapEditorImpl(props: LocalTiptapEditorProps) {
       props.locale,
       (source) => onLoadResourceRef.current(source),
       {
-        readOnly: () => isViewerRef.current,
+        readOnly: isViewer,
         // NodeView binds ⋯ / image taps directly — Android WebView often drops
         // click after pointerdown preventDefault, so PM handleClick is not enough.
         onResourcePress: (targetJson) => onResourcePressRef.current?.(targetJson),
         onImagePreview: (payloadJson) => onImagePreviewRef.current?.(payloadJson),
       }
     ),
-    [props.baseUrl, props.locale]
+    [isViewer, props.baseUrl, props.locale]
   );
-  const diagramViewer = isViewer && Boolean(props.mode === "viewer" && props.visualDiagramNote);
   const mermaidCodeBlockExtension = useMemo(
-    () => createMobileCodeBlockExtension(props.locale, props.theme, diagramViewer),
-    [diagramViewer, props.locale, props.theme]
+    () => createMobileCodeBlockExtension(
+      props.locale,
+      props.theme,
+      props.mode === "viewer" && Boolean(props.visualDiagramNote),
+    ),
+    [props.locale, props.mode, props.theme, props.mode === "viewer" ? props.visualDiagramNote : undefined]
   );
   const searchHighlightExtension = useMemo(
     () => Extension.create({
@@ -787,9 +804,11 @@ function LocalTiptapEditorImpl(props: LocalTiptapEditorProps) {
         table: { renderWrapper: true },
       }),
       ...createNativeUnsupportedContentExtensions(),
-      Placeholder.configure({
-        placeholder: () => isViewerRef.current ? "" : getMobileEditorPlaceholder(props.locale),
-      }),
+      ...(isViewer
+        ? []
+        : [Placeholder.configure({
+            placeholder: getMobileEditorPlaceholder(props.locale),
+          })]),
     ],
     content: prepareNativeEditorContent(
       resolveImageSources(resolveMobileAttachmentContent(props.content), props.baseUrl),
@@ -803,7 +822,7 @@ function LocalTiptapEditorImpl(props: LocalTiptapEditorProps) {
         // Intercept attachment anchors before ProseMirror's later click phase so
         // the embedded file:// WebView never follows relative resource URLs.
         click: (_view, event) => handleMobileResourceEvent(event, onResourcePressRef.current, {
-          allowImagePreview: isViewerRef.current,
+          allowImagePreview: isViewer,
           onImagePreview: onImagePreviewRef.current,
         }),
         contextmenu: (_view, event) => handleMobileResourceEvent(event, onResourcePressRef.current, {
@@ -811,7 +830,7 @@ function LocalTiptapEditorImpl(props: LocalTiptapEditorProps) {
           onImagePreview: onImagePreviewRef.current,
         }),
         dblclick: (_view, event) => {
-          if (!isViewerRef.current || !onDoublePressRef.current) return false;
+          if (!isViewer || !onDoublePressRef.current) return false;
           const target = event.target as HTMLElement | null;
           if (!target || target.closest("a, button, img, input, textarea, select, .edgeever-image-node")) {
             return false;
@@ -824,7 +843,7 @@ function LocalTiptapEditorImpl(props: LocalTiptapEditorProps) {
       },
     },
     onUpdate: ({ editor: activeEditor, transaction }) => {
-      if (isViewerRef.current || !onChangeRef.current) {
+      if (isViewer || !onChangeRef.current) {
         return;
       }
       if (transaction.getMeta(TRANSIENT_IMAGE_UPLOAD_META)) {
@@ -841,7 +860,7 @@ function LocalTiptapEditorImpl(props: LocalTiptapEditorProps) {
   });
 
   const flush = useCallback(() => {
-    if (isViewerRef.current || !editor || editor.isDestroyed || !onChangeRef.current) {
+    if (isViewer || !editor || editor.isDestroyed || !onChangeRef.current) {
       return;
     }
     if (changeTimerRef.current !== null) {
@@ -849,7 +868,7 @@ function LocalTiptapEditorImpl(props: LocalTiptapEditorProps) {
       changeTimerRef.current = null;
     }
     void onChangeRef.current(getPersistableEditorDoc(editor.getJSON() as EditorDoc, props.baseUrl));
-  }, [editor, props.baseUrl]);
+  }, [editor, isViewer, props.baseUrl]);
 
   const setContent = useCallback((contentJsonSerialized: DOMValue) => {
     if (!editor || editor.isDestroyed || typeof contentJsonSerialized !== "string") {
@@ -1377,31 +1396,45 @@ function LocalTiptapEditorImpl(props: LocalTiptapEditorProps) {
   );
 
   useEffect(() => {
-    if (!editor || editor.isDestroyed) {
-      return;
-    }
-    editor.setEditable(!isViewer);
-    editor.view.dom.classList.toggle("edgeever-viewer-content", isViewer);
-  }, [editor, isViewer]);
-
-  useEffect(() => {
     if (!editor) {
       return;
     }
 
     void onReadyRef.current(Math.round(performance.now() - startedAtRef.current));
+    let focusFrame = 0;
+    let focusRetry: number | null = null;
+    if (autoFocus) {
+      const focusAtEnd = () => {
+        if (!editor.isDestroyed) {
+          editor.commands.focus("end");
+        }
+      };
+      focusFrame = window.requestAnimationFrame(focusAtEnd);
+      // The DOM view can report ready one bridge turn before Android attaches
+      // its input connection. Keep the HTML selection ready for the native IME
+      // handoff without delaying the editor's first visible frame.
+      focusRetry = window.setTimeout(focusAtEnd, 120);
+    }
     const handlePageHide = () => flush();
     const handleVisibilityChange = () => {
       if (document.visibilityState === "hidden") {
         flush();
       }
     };
-    window.addEventListener("pagehide", handlePageHide);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
+    if (!isViewer) {
+      window.addEventListener("pagehide", handlePageHide);
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+    }
 
     return () => {
-      window.removeEventListener("pagehide", handlePageHide);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.cancelAnimationFrame(focusFrame);
+      if (focusRetry !== null) {
+        window.clearTimeout(focusRetry);
+      }
+      if (!isViewer) {
+        window.removeEventListener("pagehide", handlePageHide);
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+      }
       if (changeTimerRef.current !== null) {
         window.clearTimeout(changeTimerRef.current);
       }
@@ -1412,27 +1445,7 @@ function LocalTiptapEditorImpl(props: LocalTiptapEditorProps) {
         window.clearTimeout(aiUndoTimerRef.current);
       }
     };
-  }, [editor, flush]);
-
-  useEffect(() => {
-    if (!editor || editor.isDestroyed || isViewer || !autoFocus) {
-      return;
-    }
-    const focusAtEnd = () => {
-      if (!editor.isDestroyed) {
-        editor.commands.focus("end");
-      }
-    };
-    const focusFrame = window.requestAnimationFrame(focusAtEnd);
-    // The DOM view can report ready one bridge turn before Android attaches
-    // its input connection. Keep the HTML selection ready for the native IME
-    // handoff without delaying the editor's first visible frame.
-    const focusRetry = window.setTimeout(focusAtEnd, 120);
-    return () => {
-      window.cancelAnimationFrame(focusFrame);
-      window.clearTimeout(focusRetry);
-    };
-  }, [autoFocus, editor, isViewer]);
+  }, [autoFocus, editor, flush, isViewer]);
 
   // Keep the viewer in sync when the parent swaps memo content.
   useEffect(() => {
@@ -2447,7 +2460,7 @@ const createProtectedImageExtension = (
   locale: "zh-CN" | "en-US",
   loadResource: (source: string) => Promise<string | null>,
   options?: {
-    readOnly?: boolean | (() => boolean);
+    readOnly?: boolean;
     onResourcePress?: (targetJson: string) => void | Promise<void>;
     onImagePreview?: (payloadJson: string) => void | Promise<void>;
   }
@@ -2468,14 +2481,9 @@ const createProtectedImageExtension = (
   },
   addNodeView() {
     return ({ editor, getPos, node }) => {
-      const isReadOnly = () => {
-        const option = options?.readOnly;
-        const fromOption = typeof option === "function" ? option() : Boolean(option);
-        return fromOption || !editor.isEditable;
-      };
-      const readOnly = isReadOnly();
+      const readOnly = Boolean(options?.readOnly) || !editor.isEditable;
       const updateWidth = (width: number) => {
-        if (isReadOnly()) {
+        if (readOnly) {
           return;
         }
         const position = getPos();
@@ -2700,18 +2708,18 @@ const createProtectedImageExtension = (
       actionButton.setAttribute("aria-label", locale === "en-US" ? "Image actions" : "图片操作");
       actionButton.textContent = "⋯";
       bindImageActionButton(wrapper, actionButton);
-      image.addEventListener("click", (event) => {
-        if (!isReadOnly()) {
-          return;
-        }
-        // Ignore taps that originated on the ⋯ control (event target would be button).
-        if (event.target instanceof Element && event.target.closest(".edgeever-image-actions")) {
-          return;
-        }
-        event.preventDefault();
-        event.stopPropagation();
-        emitImagePreview(wrapper);
-      });
+      if (readOnly) {
+        image.style.cursor = "zoom-in";
+        image.addEventListener("click", (event) => {
+          // Ignore taps that originated on the ⋯ control (event target would be button).
+          if (event.target instanceof Element && event.target.closest(".edgeever-image-actions")) {
+            return;
+          }
+          event.preventDefault();
+          event.stopPropagation();
+          emitImagePreview(wrapper);
+        });
+      }
       wrapper.append(loading, image, actionButton, sizeControls.dom);
       const imageType = node.type;
       let requestId = 0;
@@ -2848,7 +2856,7 @@ const createProtectedImageExtension = (
         },
         selectNode: () => {
           wrapper.classList.add("is-selected");
-          sizeControls.setVisible(!isReadOnly() && displayReady);
+          sizeControls.setVisible(!readOnly && displayReady);
         },
         deselectNode: () => {
           wrapper.classList.remove("is-selected");
