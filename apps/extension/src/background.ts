@@ -253,8 +253,6 @@ const persistImage = async (
       capturedAt: new Date().toISOString(),
       sourceLabel: t("sourceLabel"),
       capturedAtLabel: t("capturedAtLabel"),
-      googleSearchLabel: t("googleSearchLabel"),
-      keywordLabel: t("searchKeywordLabel"),
       altFallback: t("imageAltFallback"),
     });
   } catch (error) {

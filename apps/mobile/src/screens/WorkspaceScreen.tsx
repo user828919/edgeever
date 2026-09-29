@@ -30,7 +30,7 @@ import {
   type MobileLocalePreference,
   type MobileMemoListDensity,
 } from "../lib/preferences";
-import { localizeUntitledMemoTitle, localizeMissingNotebookName, useMobileLocale } from "../lib/mobile-locale";
+import { useMobileLocale } from "../lib/mobile-locale";
 import { useSession } from "../lib/session";
 import {
   clearMobileMemoUpdateQueueItem,
@@ -969,10 +969,9 @@ export const WorkspaceScreen = ({
 
       const response = await client.createMemoShare(memo.id);
       const shareUrl = `${session.baseUrl.replace(/\/+$/, "")}/share/${encodeURIComponent(response.share.token)}`;
-      const shareTitle = localizeUntitledMemoTitle(memo.title, resolvedLocale);
       await NativeShare.share({
-        message: `${shareTitle}\n${shareUrl}`,
-        title: shareTitle,
+        message: `${memo.title?.trim() || DEFAULT_MEMO_TITLE}\n${shareUrl}`,
+        title: memo.title?.trim() || DEFAULT_MEMO_TITLE,
         url: shareUrl,
       });
     },
@@ -1278,7 +1277,7 @@ export const WorkspaceScreen = ({
         isSaving={updateMemoMutation.isPending || localUpdateMemoMutation.isPending}
         isSharing={shareMemoMutation.isPending}
         memo={selectedMemo}
-        notebookName={notebooks.find((notebook) => notebook.id === selectedMemo?.notebookId)?.name ?? localizeMissingNotebookName(resolvedLocale)}
+        notebookName={notebooks.find((notebook) => notebook.id === selectedMemo?.notebookId)?.name ?? "未分类"}
         notebooks={notebooks}
         onClose={closeDetail}
         onCloseEditor={closeRichEditor}

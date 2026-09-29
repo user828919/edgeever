@@ -3772,16 +3772,10 @@ const RichEditorPane = ({
             {!readOnly && (!mobileEditingActive || isMemoShared) && (
               <IconTooltip label={t(isLocalMemoId(memo.id) ? "sharing.afterSync" : isMemoShared ? "sharing.manage" : "sharing.action")}>
                 <Button
-                  className={cn(
-                    "h-8 w-8",
-                    isMemoShared
-                      ? "bg-[#d4d4d4] text-[#2a2a2a] hover:bg-[#e4e4e4] hover:text-[#2a2a2a]"
-                      : "text-slate-500",
-                  )}
+                  className={cn("h-8 w-8", isMemoShared ? "text-slate-700" : "text-slate-500")}
                   size="icon"
                   variant="ghost"
                   type="button"
-                  aria-pressed={isMemoShared}
                   aria-label={t(isLocalMemoId(memo.id) ? "sharing.afterSync" : isMemoShared ? "sharing.manage" : "sharing.action")}
                   disabled={isLocalMemoId(memo.id)}
                   onClick={() => setShareOpen(true)}

@@ -27,7 +27,7 @@ import {
   saveMobileResourceAs,
   type MobileResourceTarget,
 } from "../lib/mobile-attachments";
-import { localizeUntitledMemoTitle, useMobileLocale } from "../lib/mobile-locale";
+import { useMobileLocale } from "../lib/mobile-locale";
 import {
   createOnceProtectedResourceFailureNotifier,
   isProtectedResourceSource,
@@ -625,7 +625,7 @@ export const MemoDetailModal = ({
     }
   }, []);
 
-  const memoTitle = localizeUntitledMemoTitle(memo?.title, resolvedLocale);
+  const memoTitle = memo?.title?.trim() || DEFAULT_MEMO_TITLE;
   const memoTagsText = memo?.tags.join(", ") ?? "";
   const metadataSearchMatches = useMemo(() => ({
     tags: getTextSearchMatches(memoTagsText, searchQuery),
@@ -844,8 +844,8 @@ export const MemoDetailModal = ({
     safeDomCall(() => viewerRef.current?.exportImage(JSON.stringify({
       requestId,
       format,
-      title: localizeUntitledMemoTitle(memo.title, resolvedLocale),
-      fallbackTitle: localizeUntitledMemoTitle(null, resolvedLocale),
+      title: memo.title?.trim() || (resolvedLocale !== "zh-CN" ? "Untitled note" : "无标题笔记"),
+      fallbackTitle: resolvedLocale !== "zh-CN" ? "Untitled note" : "无标题笔记",
       notebook: options.showNotebook === false ? "" : notebookName,
       tags: options.showTags === false ? [] : memo.tags,
       updatedAt: options.showUpdatedAt === false ? "" : new Date(memo.updatedAt).toLocaleString(resolvedLocale),

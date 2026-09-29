@@ -1,4 +1,4 @@
-import { Bold, Check, ChevronDown, ImagePlus, List, ListIndentDecrease, ListIndentIncrease, ListTodo, Minus, Quote, Redo2, Undo2 } from "lucide-react";
+import { Bold, Check, ChevronDown, ImagePlus, List, ListIndentDecrease, ListIndentIncrease, ListTodo, Minus, Quote } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   MOBILE_EDITOR_TOOLBAR_ACTIONS,
@@ -54,8 +54,6 @@ const MobileEditorHeaderInner = ({
 
 export const MobileEditorToolbar = ({
   disabled,
-  undoAvailable,
-  redoAvailable,
   boldActive,
   bulletListActive,
   taskListActive,
@@ -63,8 +61,6 @@ export const MobileEditorToolbar = ({
   decreaseListIndentAvailable,
   blockquoteActive,
   locale,
-  onUndo,
-  onRedo,
   onPickImage,
   onToggleBold,
   onToggleBulletList,
@@ -75,8 +71,6 @@ export const MobileEditorToolbar = ({
   onSetHorizontalRule,
 }: {
   disabled: boolean;
-  undoAvailable: boolean;
-  redoAvailable: boolean;
   boldActive: boolean;
   bulletListActive: boolean;
   taskListActive: boolean;
@@ -84,8 +78,6 @@ export const MobileEditorToolbar = ({
   decreaseListIndentAvailable: boolean;
   blockquoteActive: boolean;
   locale: MobileEditorLocale;
-  onUndo: () => void;
-  onRedo: () => void;
   onPickImage: () => void;
   onToggleBold: () => void;
   onToggleBulletList: () => void;
@@ -96,8 +88,6 @@ export const MobileEditorToolbar = ({
   onSetHorizontalRule: () => void;
 }) => {
   const icons: Record<MobileEditorToolbarActionId, ReactNode> = {
-    undo: <Undo2 aria-hidden="true" size={18} strokeWidth={2} />,
-    redo: <Redo2 aria-hidden="true" size={18} strokeWidth={2} />,
     image: <ImagePlus aria-hidden="true" size={18} strokeWidth={2} />,
     bold: <Bold aria-hidden="true" size={17} strokeWidth={2.4} />,
     bulletList: <List aria-hidden="true" size={18} strokeWidth={2.2} />,
@@ -108,8 +98,6 @@ export const MobileEditorToolbar = ({
     horizontalRule: <Minus aria-hidden="true" size={18} strokeWidth={2.4} />,
   };
   const handlers: Record<MobileEditorToolbarActionId, () => void> = {
-    undo: onUndo,
-    redo: onRedo,
     image: onPickImage,
     bold: onToggleBold,
     bulletList: onToggleBulletList,
@@ -140,8 +128,6 @@ export const MobileEditorToolbar = ({
             title={label}
             aria-pressed={activeStates[id]}
             disabled={disabled
-              || (id === "undo" && !undoAvailable)
-              || (id === "redo" && !redoAvailable)
               || (id === "increaseListIndent" && !increaseListIndentAvailable)
               || (id === "decreaseListIndent" && !decreaseListIndentAvailable)}
             onPointerDown={(event) => event.preventDefault()}
